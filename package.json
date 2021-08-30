@@ -16,7 +16,6 @@
   "type": "module",
   "dependencies": {
     "crypto-js": "^4.1.1",
-    "node-fetch": "^2.6.1",
-    "websocket": "^1.0.34"
+    "node-fetch": "^2.6.1"
   }
 }

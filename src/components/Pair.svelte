@@ -4,9 +4,11 @@
   import { usdtMode } from '../config/store.js';
 
   export let symbol = 'ticker'
+  
   let price = 0
   let mark_price = 0
   let endpoint = ''
+  let wss = null
 
   if ($usdtMode) {
     endpoint = mainnet_usdt_endpoint
@@ -14,18 +16,17 @@
     endpoint = mainnet_endpoint
   }
 
-  onMount(() => {
-    const ws = new WebSocket(endpoint)
-    
-    ws.onopen = (event) => {
-      const req = JSON.stringify({
-        "op": "subscribe",
-        "args": [`instrument_info.100ms.${symbol}`]
+  $: if (wss !== null) {
+    wss.onopen = (event) => {
+      const topic = [`instrument_info.100ms.${symbol}`]
+      const msg = JSON.stringify({
+        op: "subscribe",
+        args: topic
       })
-      ws.send(req)
+      wss.send(msg)
     }
     
-    ws.onmessage = (event) => {
+    wss.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data)
         if (!(data.data.update[0].last_price_e4 === undefined)) {
@@ -36,6 +37,10 @@
         }
       } catch (e) {}
     }
+  }
+  
+  onMount(() => {
+    wss = new WebSocket(endpoint)
   })
 </script>
 

@@ -1,1 +1,3 @@
 # simplebybit
+
+A simple Bybit app, work in progress...

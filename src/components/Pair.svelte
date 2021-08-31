@@ -1,29 +1,24 @@
 <script>
-  import { mainnet_endpoint, mainnet_usdt_endpoint } from '../config/config.js'
+  import { mainnet_inverse_ws, mainnet_usdt_ws } from '../config/config.js'
   import { onMount } from 'svelte'
-  import { usdtMode } from '../config/store.js';
+  import { usdtMode, selectedMarket } from '../config/store.js';
+  import { subscribeTopic, unsubscribeTopic } from "../network/websocket"
 
-  export let symbol = 'ticker'
-  
   let price = 0
   let mark_price = 0
-  let endpoint = ''
   let wss = null
-
-  if ($usdtMode) {
-    endpoint = mainnet_usdt_endpoint
-  } else {
-    endpoint = mainnet_endpoint
-  }
+  let prevTopic = ''
 
   $: if (wss !== null) {
     wss.onopen = (event) => {
-      const topic = [`instrument_info.100ms.${symbol}`]
-      const msg = JSON.stringify({
-        op: "subscribe",
-        args: topic
+      selectedMarket.subscribe(symbol => {
+        unsubscribeTopic(prevTopic, wss)
+        price = "..."
+        mark_price = "..."
+        const topic = [`instrument_info.100ms.${symbol}`]
+        prevTopic = topic
+        subscribeTopic(topic, wss)
       })
-      wss.send(msg)
     }
     
     wss.onmessage = (event) => {
@@ -40,14 +35,25 @@
   }
   
   onMount(() => {
-    wss = new WebSocket(endpoint)
+    usdtMode.subscribe(mode => {
+      try {
+        wss.close()
+      } catch (e) {}
+      let endpoint = ''
+        if (mode) {
+          endpoint = mainnet_usdt_ws
+        } else {
+          endpoint = mainnet_inverse_ws
+        }
+        wss = new WebSocket(endpoint)
+    })
   })
 </script>
 
 <div>
   <div class="container">
     <div>
-      <p class="ticker">{symbol}</p>
+      <p class="ticker">{$selectedMarket}</p>
       <p>{price}</p>
     </div>
     <div>

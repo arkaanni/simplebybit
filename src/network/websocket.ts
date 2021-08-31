@@ -1,19 +1,7 @@
-const subscribeTopic = (topic: string[], ws: WebSocket) => {
+export default (op: string, topic: string[], ws: WebSocket) => {
   const msg = JSON.stringify({
-    op: "subscribe",
+    op,
     args: topic
   })
   ws.send(msg)
-}
-
-const unsubscribeTopic = (topic: string[], ws: WebSocket) => {
-  const msg = JSON.stringify({
-    op: "unsubscribe",
-    args: topic
-  })
-  ws.send(msg)
-}
-
-export {
-  subscribeTopic, unsubscribeTopic
 }

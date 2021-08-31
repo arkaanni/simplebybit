@@ -1,3 +1,8 @@
 import { writable } from "svelte/store"
 
-export const usdtMode = writable(true)
+const usdtMode = writable(true)
+const selectedMarket = writable("")
+
+export {
+  usdtMode, selectedMarket
+}

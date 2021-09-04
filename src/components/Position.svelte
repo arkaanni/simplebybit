@@ -1,26 +1,36 @@
 <script>
-  import { mainnet_usdt_endpoint } from '../config/config.js'
-  import { auth } from '../config/auth.js'
-  import { onMount } from 'svelte';
-  let position = ''
-  onMount(() => { 
-    const ws = new WebSocket(mainnet_usdt_endpoint)
-    ws.onopen = (event) => {
-      auth(ws)
-      ws.send(JSON.stringify({"op": "subscribe", "args": ["position"]}))
-    }
-    ws.onmessage = (event) => {
-      try {
-        const res = JSON.parse(event.data)
-        if (res.topic === "position") {
-          console.log(res.data)
-        }
-      } catch (e) {
-        console.log(e)
-      }
-    }
-  })
+  export let positions = []
+  
+  const fetchPositions = () => {
+    fetch("http://localhost:3000/api/position").then(res => res.json()).then(data => {
+      positions = data
+    }).catch((e) => {})
+  }
+  
+  fetchPositions()
 
+  setInterval(() => {
+    fetchPositions()
+  }, 10000)
 </script>
 
-<div>{position}</div>
+<div>
+  <table>
+    <thead>
+      <th>Symbol</th>
+      <th>Side</th>
+      <th>Value</th>
+      <th>Margin</th>
+      <th>Unrealised PnL</th>
+    </thead>
+    <tbody>
+      {#each positions as position}
+        <td>{position.data.symbol}</td>
+        <td>{position.data.side}</td>
+        <td>{position.data.position_value}</td>
+        <td>{position.data.position_margin}</td>
+        <td>{position.data.unrealised_pnl}</td>
+      {/each}
+    </tbody>
+  </table>
+</div>

@@ -2,52 +2,57 @@
   import { mainnet_inverse_ws, mainnet_usdt_ws } from '../config/config.js'
   import { onMount } from 'svelte'
   import { usdtMode, selectedMarket } from '../config/store.js';
-  import { subscribeTopic, unsubscribeTopic } from "../network/websocket"
+  import { websocketRequest } from "../network/websocket"
 
   let price = 0
   let mark_price = 0
   let wss = null
-  let prevTopic = ''
+  let prevTopic = ""
+  let defaultSymbol = ""
 
-  $: if (wss !== null) {
-    wss.onopen = (event) => {
-      selectedMarket.subscribe(symbol => {
-        unsubscribeTopic(prevTopic, wss)
-        price = "..."
-        mark_price = "..."
-        const topic = [`instrument_info.100ms.${symbol}`]
-        prevTopic = topic
-        subscribeTopic(topic, wss)
-      })
-    }
-    
-    wss.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data)
-        if (!(data.data.update[0].last_price_e4 === undefined)) {
-          price = data.data.update[0].last_price_e4 / 10000
-        }
-        if (!(data.data.update[0].mark_price_e4 === undefined)) {
-          mark_price = data.data.update[0].mark_price_e4 / 10000
-        }
-      } catch (e) {}
-    }
-  }
-  
   onMount(() => {
     usdtMode.subscribe(mode => {
       try {
         wss.close()
       } catch (e) {}
-      let endpoint = ''
-        if (mode) {
-          endpoint = mainnet_usdt_ws
-        } else {
-          endpoint = mainnet_inverse_ws
-        }
-        wss = new WebSocket(endpoint)
+      if (mode) {
+        wss = new WebSocket(mainnet_usdt_ws)
+        defaultSymbol = "BTCUSDT"
+      } else {
+        wss = new WebSocket(mainnet_inverse_ws)
+        defaultSymbol = "BTCUSD"
+      }
     })
   })
+
+  $: if (wss !== null) {
+    wss.onopen = () => {
+      selectedMarket.set(defaultSymbol)
+      selectedMarket.subscribe(symbol => {
+        websocketRequest("unsubscribe", prevTopic, wss)
+        price = "..."
+        mark_price = "..."
+        const topic = [`instrument_info.100ms.${symbol}`]
+        prevTopic = topic
+        websocketRequest("subscribe", topic, wss)
+      })
+    }
+    wss.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+        if (data.type === "snapshot" ) {
+          price = data.data.last_price
+          mark_price = data.data.mark_price
+        }
+        if (!(data.data.update[0].last_price === undefined)) {
+          price = data.data.update[0].last_price
+        }
+        if (!(data.data.update[0].mark_price === undefined)) {
+          mark_price = data.data.update[0].mark_price
+        }
+      } catch (e) {}
+    }
+  }
 </script>
 
 <div>

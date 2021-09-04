@@ -1,15 +1,15 @@
 <script>
   import Pair from '../components/Pair.svelte'
   import Order from '../components/Order.svelte'
+  import Position from '../components/Position.svelte'
   import { inverse, usdtPerp } from '../config/symbol.js'
-  import { usdtMode } from '../config/store';
+  import { usdtMode, selectedMarket } from '../config/store';
   
   let mode = "USDT"
   let markets = usdtPerp
-  let ticker = "BTCUSDT"
 
   const switchMarket = (pair) => {
-    ticker = pair
+    selectedMarket.set(`${pair}`)
   }
 
   const switchMode = () => {
@@ -33,8 +33,9 @@
       <h5 style="cursor: pointer;" on:click={switchMarket(pair)}>{pair}</h5>
     {/each}
   </div>
-  <Pair bind:symbol={ticker}></Pair>
+  <Pair></Pair>
   <Order></Order>
+  <Position />
 </div>
 
 <style>
